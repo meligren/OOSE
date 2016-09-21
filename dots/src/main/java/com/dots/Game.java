@@ -1,6 +1,4 @@
 package com.dots;
-
-
 /**
  * Created by melissa on 9/19/16.
  */
@@ -9,33 +7,26 @@ public class Game {
     private Player host;
     private Player guest;
     private GameState current_state;
-    protected Board current_board;
-
-    private class GameState {
-        protected String state;
-        protected int redScore;
-        protected int blueScore;
-        protected String whoseTurn;
-
-        public GameState() {
-            this.state = "WAITING_TO_START";
-            this.redScore = 0;
-            this.blueScore = 0;
-        }
-    }
+    private Board current_board;
+    private transient Player turn;
 
     public Game(String newGameId){
         this.host = new Player(newGameId);
         this.guest = new Player(newGameId);
         this.gameId = newGameId;
+        this.current_state = new GameState();
         this.current_board = new Board();
+    }
+
+    public void setStatus(String newStatus) {
+        this.current_state.setState(newStatus); //error checking
     }
 
     public Board getCurrent_board() {
         return this.current_board;
     }
 
-    public GameState getCurrent_state() {
+    public GameState getCurrent_state(){
         return this.current_state;
     }
 
@@ -47,17 +38,103 @@ public class Game {
         return this.guest;
     }
 
-    public void setStatus(String newStatus) {
-        this.current_state.state = newStatus; //error checking
+    public void setHostType(String pType) {
+        pType = pType.substring(15, pType.length() - 2);
+        host.setPlayerType(pType);
+        if (pType.toUpperCase().compareTo("RED") == 0) {
+            guest.setPlayerType("BLUE");
+            this.turn = this.host;
+        } else {
+            guest.setPlayerType("RED");
+            this.turn = this.guest;
+        }
+        current_state.setWhoseTurn("RED");
+
     }
 
-    public void setHostType(String pType) {
-        host.playerType = pType;
-        current_state.whoseTurn = pType;
-        if (pType.compareTo("RED") == 0) {
-            guest.playerType = "BLUE";
+    public void toggleTurn() {
+        if (this.turn == this.host) {
+            this.turn = this.guest;
+            this.current_state.setWhoseTurn(this.guest.getPlayerType());
         } else {
-            guest.playerType = "RED";
+            this.turn = this.host;
+            this.current_state.setWhoseTurn(this.host.getPlayerType());
         }
     }
+
+    public boolean updateVBoard(int row, int col, String id) {
+        if (this.current_board.isVFilled(row, col)) {
+            return false;
+        }else if (this.turn.getPlayerId().compareTo(id) != 0){
+            return false;
+        }else {
+            this.current_board.toggleVFilled(row, col);
+            this.toggleTurn();
+            return true;
+        }
+        //check if box is made, if box is not made, then switch players
+    }
+
+    public boolean updateHBoard(int row, int col, String id) {
+        if (this.current_board.isHFilled(row, col)) {
+            return false;
+        }else if (this.turn.getPlayerId().compareTo(id) != 0){
+            return false;
+        } else {
+            this.current_board.toggleHFilled(row, col);
+            if(boxMade(row, col, 'h') == 1) {
+                //same col, row - 1 box
+
+            } else if (boxMade(row, col, 'h') == 0) {
+                //same col and row box
+                
+            } else {
+                this.toggleTurn();
+            }
+            return true;
+        }
+        //check if box is made, if box is not made, then switch players
+    }
+
+    private int boxMade(int row, int col, char moveType) {
+        //right box is 1, left box is 0, no box made is -1
+        if (moveType == 'v') {
+            if (col < 4 && col > 0) {
+                if (this.current_board.isHFilled(row, col) && this.current_board.isVFilled(row, col + 1) && this.current_board.isHFilled(row + 1, col)) {
+                    return 1;
+                } else if (this.current_board.isHFilled(row, col - 1) && this.current_board.isVFilled(row, col - 1) && this.current_board.isHFilled(row + 1, col - 1)) {
+                    return 0;
+                }
+            } else if (col == 4) {
+                if (this.current_board.isHFilled(row, col - 1) && this.current_board.isVFilled(row, col - 1) && this.current_board.isHFilled(row + 1, col - 1)) {
+                    return 0;
+                }
+            } else if (col == 0) {
+                if (this.current_board.isHFilled(row, col) && this.current_board.isVFilled(row, col + 1) && this.current_board.isHFilled(row + 1, col)) {
+                    return 1;
+                }
+            }
+        } else if (moveType == 'h') {
+            //0 is up, 1 is down, -1 is no box
+            if (row < 4 && row > 0) {
+                if (this.current_board.isVFilled(row, col) && this.current_board.isVFilled(row, col + 1) && this.current_board.isHFilled(row + 1, col)) {
+                    return 1;
+                } else if (this.current_board.isHFilled(row - 1, col) && this.current_board.isVFilled(row - 1, col) && this.current_board.isHFilled(row - 1, col + 1)) {
+                    return 0;
+                }
+            } else if (row == 4) {
+                if (this.current_board.isHFilled(row - 1, col) && this.current_board.isVFilled(row - 1, col) && this.current_board.isHFilled(row - 1, col + 1)) {
+                    return 0;
+                }
+            } else if (row == 0) {
+                if (this.current_board.isVFilled(row, col) && this.current_board.isVFilled(row, col + 1) && this.current_board.isHFilled(row + 1, col)) {
+                    return 1;
+                }
+            }
+        } else {
+            //error
+        }
+        return -1;
+    }
+
 }
