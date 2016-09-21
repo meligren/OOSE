@@ -76,7 +76,7 @@
                             <transformers>
                                 <transformer
                                         implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
-                                    <mainClass>com.dots.Bootstrap</mainClass>
+                                    <mainClass>com.oose2016.mgree106.dots.Bootstrap</mainClass>
                                 </transformer>
                             </transformers>
                         </configuration>
